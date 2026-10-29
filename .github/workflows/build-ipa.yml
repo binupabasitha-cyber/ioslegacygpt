@@ -5,11 +5,21 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Locate project
+        run: |
+          echo "Repo contents:"; ls -la
+          if [ -z "$(find . -maxdepth 8 -name ChatGPT.xcodeproj | head -1)" ]; then
+            echo "No project found, unzipping the zip from the repo"
+            ZIP=$(find . -maxdepth 2 -name '*.zip' | head -1)
+            echo "Using: $ZIP"
+            mkdir -p unpacked && unzip -q "$ZIP" -d unpacked
+          fi
+          PROJ=$(find . -maxdepth 8 -name ChatGPT.xcodeproj | head -1)
+          echo "Found project at: $PROJ"
+          echo "PROJDIR=$(dirname "$PROJ")" >> $GITHUB_ENV
       - name: Build and package
         run: |
-          PROJ=$(find . -maxdepth 4 -name ChatGPT.xcodeproj | head -1)
-          echo "Found project at: $PROJ"
-          cd "$(dirname "$PROJ")"
+          cd "$PROJDIR"
           xcodebuild -project ChatGPT.xcodeproj -target ChatGPT -configuration Release \
             -sdk iphoneos SYMROOT="$PWD/build" \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
