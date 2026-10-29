@@ -5,16 +5,17 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build
+      - name: Build and package
         run: |
+          PROJ=$(find . -maxdepth 4 -name ChatGPT.xcodeproj | head -1)
+          echo "Found project at: $PROJ"
+          cd "$(dirname "$PROJ")"
           xcodebuild -project ChatGPT.xcodeproj -target ChatGPT -configuration Release \
             -sdk iphoneos SYMROOT="$PWD/build" \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
             ARCHS=arm64 ONLY_ACTIVE_ARCH=NO build
-      - name: Package IPA
-        run: |
           mkdir -p Payload && cp -R build/Release-iphoneos/ChatGPT.app Payload/
-          zip -qr ChatGPT-arm64-unsigned.ipa Payload
+          zip -qr "$GITHUB_WORKSPACE/ChatGPT-arm64-unsigned.ipa" Payload
       - uses: actions/upload-artifact@v4
         with:
           name: ChatGPT-arm64-unsigned
